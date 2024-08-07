@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Cat, Heart, Moon, Sun, ArrowUp, Sparkles, Music, PawPrint } from "lucide-react";
+import { Cat, Heart, Moon, Sun, ArrowUp, Sparkles, Music, PawPrint, Gift } from "lucide-react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip } from "@/components/ui/tooltip";
 import CatFactGenerator from "../components/CatFactGenerator";
 import CatNameGenerator from "../components/CatNameGenerator";
 import ColorPaletteSelector from "../components/ColorPaletteSelector";
@@ -14,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../components/ThemeProvider";
 import confetti from 'canvas-confetti';
 import { Howl } from 'howler';
+import { useSpring, animated } from 'react-spring';
 
 const catImages = [
   { url: "https://placekitten.com/800/400", caption: "Playful Kitten" },
@@ -37,8 +39,14 @@ const Index = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showGift, setShowGift] = useState(false);
   const { theme, setTheme } = useTheme();
   const audioRef = useRef(null);
+
+  const giftAnimation = useSpring({
+    opacity: showGift ? 1 : 0,
+    transform: showGift ? 'scale(1)' : 'scale(0)',
+  });
 
   useEffect(() => {
     audioRef.current = new Howl({
@@ -46,6 +54,9 @@ const Index = () => {
       loop: true,
       volume: 0.5,
     });
+
+    const giftTimer = setTimeout(() => setShowGift(true), 10000);
+    return () => clearTimeout(giftTimer);
   }, []);
 
   const toggleAudio = () => {
@@ -55,6 +66,20 @@ const Index = () => {
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const openGift = () => {
+    setShowGift(false);
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    const surpriseMeow = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-domestic-cat-hungry-meow-45.mp3'],
+      volume: 0.5,
+    });
+    surpriseMeow.play();
   };
 
   const sliderSettings = {
@@ -104,33 +129,37 @@ const Index = () => {
           <Cat className="mr-2" /> Fancy Cat World
         </motion.h1>
         <div className="flex justify-center mb-4">
-          <Button
-            onClick={toggleAudio}
-            className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mr-4"
-          >
-            <Music className="mr-2" /> {isPlaying ? 'Pause Meow' : 'Play Meow'}
-          </Button>
-          <Button
-            onClick={() => {
-              const pawPrints = Array.from({ length: 20 }, () => ({
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-              }));
-              pawPrints.forEach((pos, index) => {
-                setTimeout(() => {
-                  const paw = document.createElement('div');
-                  paw.className = 'paw-print';
-                  paw.style.left = `${pos.x}px`;
-                  paw.style.top = `${pos.y}px`;
-                  document.body.appendChild(paw);
-                  setTimeout(() => document.body.removeChild(paw), 1000);
-                }, index * 100);
-              });
-            }}
-            className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-          >
-            <PawPrint className="mr-2" /> Paw Parade
-          </Button>
+          <Tooltip content={isPlaying ? "Pause the meow" : "Play the meow"}>
+            <Button
+              onClick={toggleAudio}
+              className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mr-4"
+            >
+              <Music className="mr-2" /> {isPlaying ? 'Pause Meow' : 'Play Meow'}
+            </Button>
+          </Tooltip>
+          <Tooltip content="Create a parade of paw prints">
+            <Button
+              onClick={() => {
+                const pawPrints = Array.from({ length: 20 }, () => ({
+                  x: Math.random() * window.innerWidth,
+                  y: Math.random() * window.innerHeight,
+                }));
+                pawPrints.forEach((pos, index) => {
+                  setTimeout(() => {
+                    const paw = document.createElement('div');
+                    paw.className = 'paw-print';
+                    paw.style.left = `${pos.x}px`;
+                    paw.style.top = `${pos.y}px`;
+                    document.body.appendChild(paw);
+                    setTimeout(() => document.body.removeChild(paw), 1000);
+                  }, index * 100);
+                });
+              }}
+              className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              <PawPrint className="mr-2" /> Paw Parade
+            </Button>
+          </Tooltip>
         </div>
 
         <Slider {...sliderSettings} className="mb-8">
@@ -225,29 +254,31 @@ const Index = () => {
         </Card>
 
         <div className="text-center">
-          <Button
-            onClick={() => {
-              setLikes(likes + 1);
-              const paw = document.createElement('div');
-              paw.className = 'paw-print';
-              paw.style.left = `${Math.random() * window.innerWidth}px`;
-              document.body.appendChild(paw);
-              setTimeout(() => document.body.removeChild(paw), 1000);
-              confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-              });
-              const meow = new Howl({
-                src: ['https://assets.mixkit.co/sfx/preview/mixkit-sweet-kitty-meow-93.mp3'],
-                volume: 0.5,
-              });
-              meow.play();
-            }}
-            className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-          >
-            <Heart className="mr-2" /> Like This Page
-          </Button>
+          <Tooltip content="Show some love for cats!">
+            <Button
+              onClick={() => {
+                setLikes(likes + 1);
+                const paw = document.createElement('div');
+                paw.className = 'paw-print';
+                paw.style.left = `${Math.random() * window.innerWidth}px`;
+                document.body.appendChild(paw);
+                setTimeout(() => document.body.removeChild(paw), 1000);
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: { y: 0.6 }
+                });
+                const meow = new Howl({
+                  src: ['https://assets.mixkit.co/sfx/preview/mixkit-sweet-kitty-meow-93.mp3'],
+                  volume: 0.5,
+                });
+                meow.play();
+              }}
+              className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              <Heart className="mr-2" /> Like This Page
+            </Button>
+          </Tooltip>
           <p className="mt-2 text-gray-600">This page has {likes} likes!</p>
         </div>
       </div>
@@ -263,12 +294,14 @@ const Index = () => {
       >
         <Sparkles size={24} color="#ff69b4" />
       </div>
-      <Button
-        className="fixed bottom-4 right-4 rounded-full p-2"
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      >
-        {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
-      </Button>
+      <Tooltip content={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+        <Button
+          className="fixed bottom-4 right-4 rounded-full p-2"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        >
+          {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+        </Button>
+      </Tooltip>
       <AnimatePresence>
         {showScrollTop && (
           <motion.div
@@ -277,10 +310,26 @@ const Index = () => {
             exit={{ opacity: 0, y: 20 }}
             className="fixed bottom-20 right-4"
           >
-            <Button className="rounded-full p-2" onClick={scrollToTop}>
-              <ArrowUp className="h-6 w-6" />
-            </Button>
+            <Tooltip content="Scroll to top">
+              <Button className="rounded-full p-2" onClick={scrollToTop}>
+                <ArrowUp className="h-6 w-6" />
+              </Button>
+            </Tooltip>
           </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showGift && (
+          <animated.div style={giftAnimation} className="fixed top-4 right-4">
+            <Tooltip content="Open your surprise gift!">
+              <Button
+                onClick={openGift}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+              >
+                <Gift className="mr-2" /> Surprise Gift
+              </Button>
+            </Tooltip>
+          </animated.div>
         )}
       </AnimatePresence>
     </div>
