@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Cat, Heart } from "lucide-react";
+import { Cat, Heart, Moon, Sun, ArrowUp } from "lucide-react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CatFactGenerator from "../components/CatFactGenerator";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../components/ThemeProvider";
 
 const catImages = [
   "https://placekitten.com/800/400",
@@ -26,6 +28,8 @@ const catBreeds = [
 
 const Index = () => {
   const [likes, setLikes] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const sliderSettings = {
     dots: true,
@@ -39,14 +43,31 @@ const Index = () => {
 
   useEffect(() => {
     document.title = "Fancy Cat World";
+    document.body.style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff69b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3.1-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>') 12 12, auto`;
+
+    const handleScroll = () => {
+      setShowScrollTop(window.pageYOffset > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100 p-8">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-b from-gray-900 to-purple-900 text-white' : 'bg-gradient-to-b from-purple-100 to-pink-100'} p-8 transition-colors duration-300`}>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6 flex items-center justify-center text-purple-600">
+        <motion.h1
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-6xl font-bold mb-6 flex items-center justify-center text-purple-600"
+        >
           <Cat className="mr-2" /> Fancy Cat World
-        </h1>
+        </motion.h1>
 
         <Slider {...sliderSettings} className="mb-8">
           {catImages.map((src, index) => (
@@ -93,10 +114,15 @@ const Index = () => {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {catBreeds.map((breed, index) => (
-                <div key={index} className="bg-white p-4 rounded-lg shadow-md">
+                <motion.div
+                  key={index}
+                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <h3 className="font-semibold text-lg mb-2">{breed.name}</h3>
                   <p className="text-gray-600">{breed.description}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </CardContent>
@@ -104,7 +130,14 @@ const Index = () => {
 
         <div className="text-center">
           <Button
-            onClick={() => setLikes(likes + 1)}
+            onClick={() => {
+              setLikes(likes + 1);
+              const paw = document.createElement('div');
+              paw.className = 'paw-print';
+              paw.style.left = `${Math.random() * window.innerWidth}px`;
+              document.body.appendChild(paw);
+              setTimeout(() => document.body.removeChild(paw), 1000);
+            }}
             className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
           >
             <Heart className="mr-2" /> Like This Page
@@ -112,6 +145,26 @@ const Index = () => {
           <p className="mt-2 text-gray-600">This page has {likes} likes!</p>
         </div>
       </div>
+      <Button
+        className="fixed bottom-4 right-4 rounded-full p-2"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      >
+        {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+      </Button>
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-20 right-4"
+          >
+            <Button className="rounded-full p-2" onClick={scrollToTop}>
+              <ArrowUp className="h-6 w-6" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
