@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Cat, Heart, Moon, Sun, ArrowUp, Sparkles } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Cat, Heart, Moon, Sun, ArrowUp, Sparkles, Music, PawPrint } from "lucide-react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -10,12 +10,10 @@ import CatNameGenerator from "../components/CatNameGenerator";
 import ColorPaletteSelector from "../components/ColorPaletteSelector";
 import CatPersonalityQuiz from "../components/CatPersonalityQuiz";
 import FloatingCat from "../components/FloatingCat";
-import CatNameGenerator from "../components/CatNameGenerator";
-import ColorPaletteSelector from "../components/ColorPaletteSelector";
-import CatPersonalityQuiz from "../components/CatPersonalityQuiz";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../components/ThemeProvider";
 import confetti from 'canvas-confetti';
+import { Howl } from 'howler';
 
 const catImages = [
   { url: "https://placekitten.com/800/400", caption: "Playful Kitten" },
@@ -38,7 +36,26 @@ const Index = () => {
   const [likes, setLikes] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isPlaying, setIsPlaying] = useState(false);
   const { theme, setTheme } = useTheme();
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    audioRef.current = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-sweet-kitty-meow-93.mp3'],
+      loop: true,
+      volume: 0.5,
+    });
+  }, []);
+
+  const toggleAudio = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
   const sliderSettings = {
     dots: true,
@@ -86,6 +103,35 @@ const Index = () => {
         >
           <Cat className="mr-2" /> Fancy Cat World
         </motion.h1>
+        <div className="flex justify-center mb-4">
+          <Button
+            onClick={toggleAudio}
+            className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mr-4"
+          >
+            <Music className="mr-2" /> {isPlaying ? 'Pause Meow' : 'Play Meow'}
+          </Button>
+          <Button
+            onClick={() => {
+              const pawPrints = Array.from({ length: 20 }, () => ({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+              }));
+              pawPrints.forEach((pos, index) => {
+                setTimeout(() => {
+                  const paw = document.createElement('div');
+                  paw.className = 'paw-print';
+                  paw.style.left = `${pos.x}px`;
+                  paw.style.top = `${pos.y}px`;
+                  document.body.appendChild(paw);
+                  setTimeout(() => document.body.removeChild(paw), 1000);
+                }, index * 100);
+              });
+            }}
+            className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+          >
+            <PawPrint className="mr-2" /> Paw Parade
+          </Button>
+        </div>
 
         <Slider {...sliderSettings} className="mb-8">
           {catImages.map((image, index) => (
@@ -192,6 +238,11 @@ const Index = () => {
                 spread: 70,
                 origin: { y: 0.6 }
               });
+              const meow = new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-sweet-kitty-meow-93.mp3'],
+                volume: 0.5,
+              });
+              meow.play();
             }}
             className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
           >
